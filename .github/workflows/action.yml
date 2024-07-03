@@ -1,0 +1,34 @@
+name: dockerhub-to-aliyun-registry
+
+on:
+  workflow_dispatch:
+    inputs:
+      original_docker_image:
+        description: 'original docker image'
+        required: true
+        default: 'harlancn/xiu:0.12.7'
+      dest_docker_image:
+        description: 'destination docker image'
+        required: true
+        default: 'registry.cn-hangzhou.aliyuncs.com/github-dockerhub/xiu:0.12.7'
+
+jobs:
+  build_web:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Pull image
+        shell: bash
+        run: |
+          docker pull ${{ github.event.inputs.original_docker_image }}
+      - name: login to aliyun acr
+        uses: aliyun/acr-login@v1
+        with:
+          region-id: cn-hangzhou
+          access-key-id: ${{ secrets.ALIYUN_ACR_KEY_ID }}
+          access-key-secret: ${{ secrets.ALIYUN_ACR_KEY_SECRET }}
+
+      - name: Tag and push
+        run: |
+          docker tag ${{ github.event.inputs.original_docker_image }} ${{ github.event.inputs.dest_docker_image }}
+          docker push ${{ github.event.inputs.dest_docker_image }}
